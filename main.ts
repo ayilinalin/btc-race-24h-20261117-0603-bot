@@ -109,8 +109,13 @@ await runBars({
     else if (fills === 0 && n >= FALLBACK_ARM_BARS && legFires(FALLBACK, now)) fire = FALLBACK;
     if (fire === null) return [];
 
+    // Full-size buy, capped at the weight room the caps allow and floored at
+    // the minimum notional (a rejected buy is simply re-decided next batch).
+    const room = state.weightRoom(SYMBOL);
+    const spend = state.cash < room ? state.cash : room;
+    if (spend < BigInt(state.hello.fees.min_notional_quote_units)) return [];
     leg = { tpBps: fire.tpBps, slBps: fire.slBps };
-    const buy: BuyInput = { side: 'buy', symbol: SYMBOL, notional_quote_units: state.cash, max_slippage_bps: MAX_SLIPPAGE_BPS };
+    const buy: BuyInput = { side: 'buy', symbol: SYMBOL, notional_quote_units: spend, max_slippage_bps: MAX_SLIPPAGE_BPS };
     return [buy];
   },
 });
